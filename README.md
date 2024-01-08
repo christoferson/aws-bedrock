@@ -5,6 +5,49 @@ Amazon Bedrock is a fully managed service that offers a choice of high-performin
 
 Amazon Bedrock is a HIPAA eligible service and can be used in compliance with GDPR, allowing even more customers to benefit from generative AI
 
+#### Infusing knowledge into LLM-powered systems
+
+We have two primary types of knowledge for LLMs:
+- Parametric knowledge: refers to everything the LLM learned during training and acts as a frozen snapshot of the world for the LLM.
+- Source knowledge: covers any information fed into the LLM via the input prompt.
+
+Fine-tuning, explored in other workshops, deals with elevating the parametric knowledge through fine-tuning. Since fine-tuning is a resouce intensive operation, this option is well suited for infusing static domain-specific information like domain-specific langauage/writing styles (medical domain, science domain, ...) or optimizing performance towards a very specific task (classification, sentiment analysis, RLHF, instruction-finetuning, ...).
+
+Targeting the source knowledge for domain-specific performance uplift is very well suited for all kinds of dynamic information, from knowledge bases in structured and unstructured form up to integration of information from live systems. 
+
+Retrieval-augmented generation, a common design pattern for ingesting domain-specific information through the source knowledge. It is particularily well suited for ingestion of information in form of unstructured text with semi-frequent update cycles. [rag](https://arxiv.org/pdf/2005.11401.pdf)
+
+RAG Process
+
+- Prepare documents Embeddings
+  - Before being able to answer the questions, the documents must be processed and a stored in a document store index
+    - Load the documents
+    - Process and split them into smaller chunks
+    - Create a numerical vector representation of each chunk using Amazon Bedrock Titan Embeddings model
+    - Create an index using the chunks and the corresponding embeddings
+
+- Ask question
+  - When the documents index is prepared, you are ready to ask the questions and relevant documents will be fetched based on the question being asked. Following steps will be executed.
+    - Create an embedding of the input question
+    - Compare the question embedding with the embeddings in the index
+    -  the (top N) relevant document chunks
+    - Add those chunks as part of the context in the prompt
+    - Send the prompt to the model under Amazon Bedrock
+    - Get the contextual answer based on the documents retrieved
+
+- Question Answering
+  - Quick way
+    You have the possibility to use the wrapper provided by LangChain which wraps around the Vector Store and takes input the LLM. This wrapper performs the following steps behind the scences:
+
+      -  Takes input the question
+      -  Create question embedding
+      -  Fetch relevant documents
+      -  Stuff the documents and the question into a prompt
+      -  Invoke the model with the prompt and generate the answer in a human readable manner.
+
+#### Generate embeddings
+Use text embeddings to convert text into meaningful vector representations. You input a body of text and the output is a (1 x n) vector. You can use embedding vectors for a wide variety of applications. Bedrock currently offers Titan Embeddings for text embedding that supports text similarity (finding the semantic similarity between bodies of text) and text retrieval (such as search).
+you can use amazon.titan-embed-g1-text-02 as embedding model via the API. The input text size is 8192 tokens and the output vector length is 1536.
 
 ##### Service Endpoints
 
@@ -48,6 +91,8 @@ Amazon Bedrock is a HIPAA eligible service and can be used in compliance with GD
 
 - [workshop](https://github.com/aws-samples/amazon-bedrock-workshop)
 
+- [rag](https://arxiv.org/pdf/2005.11401.pdf)
+
 - https://qdrant.tech/
 
 - https://explore.skillbuilder.aws/learn/course/external/view/elearning/17508/amazon-bedrock-getting-started
@@ -58,7 +103,7 @@ Amazon Bedrock is a HIPAA eligible service and can be used in compliance with GD
 
 - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock.html
 
-
+- https://huggingface.co/
 
 ##### Todo
 
