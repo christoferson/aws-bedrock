@@ -1,5 +1,7 @@
 # VectorIndex implementation
 import math
+import pickle
+from pathlib import Path
 from typing import Optional, Any, List, Dict, Tuple
 
 
@@ -104,6 +106,68 @@ class VectorDatabase:
         self.vectors.append(list(vector))
         self.documents.append(document)
 
+    def save(self, filepath: str):
+        """
+        Save the vector database to a pickle file.
+
+        Args:
+            filepath: Path to save the pickle file
+        """
+        data = {
+            "vectors": self.vectors,
+            "documents": self.documents,
+            "vector_dim": self._vector_dim,
+            "distance_metric": self._distance_metric,
+            "embedding_fn": self._embedding_fn
+        }
+
+        Path(filepath).parent.mkdir(parents=True, exist_ok=True)
+
+        with open(filepath, 'wb') as f:
+            pickle.dump(data, f)
+
+        print(f"✓ Database saved to {filepath}")
+
+    def load(self, filepath: str):
+        """
+        Load the vector database from a pickle file.
+
+        Args:
+            filepath: Path to the pickle file to load
+        """
+        with open(filepath, 'rb') as f:
+            data = pickle.load(f)
+
+        self.vectors = data["vectors"]
+        self.documents = data["documents"]
+        self._vector_dim = data["vector_dim"]
+        self._distance_metric = data["distance_metric"]
+        self._embedding_fn = data.get("embedding_fn")
+
+        print(f"✓ Database loaded from {filepath}")
+        print(f"  Loaded {len(self.vectors)} vectors")
+
+    @classmethod
+    def load_from_file(cls, filepath: str, embedding_fn=None):
+        """
+        Create a new VectorDatabase instance from a pickle file.
+
+        Args:
+            filepath: Path to the pickle file
+            embedding_fn: Optional embedding function to override the saved one
+
+        Returns:
+            VectorDatabase instance
+        """
+        db = cls()
+        db.load(filepath)
+
+        # Override embedding function if provided
+        if embedding_fn is not None:
+            db._embedding_fn = embedding_fn
+
+        return db
+
     def _euclidean_distance(
         self, vec1: List[float], vec2: List[float]
     ) -> float:
@@ -142,4 +206,4 @@ class VectorDatabase:
 
     def __repr__(self) -> str:
         has_embed_fn = "Yes" if self._embedding_fn else "No"
-        return f"VectorIndex(count={len(self)}, dim={self._vector_dim}, metric='{self._distance_metric}', has_embedding_fn='{has_embed_fn}')"
+        return f"VectorDatabase(count={len(self)}, dim={self._vector_dim}, metric='{self._distance_metric}', has_embedding_fn='{has_embed_fn}')"
