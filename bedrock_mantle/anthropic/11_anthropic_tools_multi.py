@@ -1,5 +1,6 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from anthropic import AnthropicBedrockMantle
 from anthropic.types import ToolParam
 from anthropic.types import ToolUseBlock, TextBlock
@@ -39,6 +40,71 @@ def calculate_time_difference(start_time, end_time, time_format="%H:%M:%S"):
         return str(difference)
     except ValueError as e:
         return f"Error parsing time: {str(e)}"
+
+
+def add_duration(base_datetime=None, years=0, months=0, weeks=0, days=0, hours=0, minutes=0, seconds=0, 
+                 input_format="%Y-%m-%d %H:%M:%S", output_format="%Y-%m-%d %H:%M:%S"):
+    """
+    Add a duration to a datetime. If no base_datetime is provided, uses current time.
+
+    Args:
+        base_datetime: Starting datetime as string (optional, defaults to now)
+        years: Number of years to add
+        months: Number of months to add
+        weeks: Number of weeks to add
+        days: Number of days to add
+        hours: Number of hours to add
+        minutes: Number of minutes to add
+        seconds: Number of seconds to add
+        input_format: Format of the input datetime string
+        output_format: Format of the output datetime string
+
+    Returns:
+        The resulting datetime as a formatted string
+    """
+    try:
+        # Use current time if no base datetime provided
+        if base_datetime is None or base_datetime == "":
+            dt = datetime.now()
+        else:
+            dt = datetime.strptime(base_datetime, input_format)
+
+        # Add duration using relativedelta for months/years and timedelta for the rest
+        dt = dt + relativedelta(years=years, months=months)
+        dt = dt + timedelta(weeks=weeks, days=days, hours=hours, minutes=minutes, seconds=seconds)
+
+        return dt.strftime(output_format)
+    except ValueError as e:
+        return f"Error: {str(e)}"
+
+
+def set_reminder(reminder_datetime, message, datetime_format="%Y-%m-%d %H:%M:%S"):
+    """
+    Set a reminder for a specific datetime with a message.
+
+    Args:
+        reminder_datetime: The datetime when the reminder should trigger
+        message: The reminder message
+        datetime_format: Format of the datetime string
+
+    Returns:
+        Confirmation message
+    """
+    try:
+        # Parse the datetime to validate it
+        dt = datetime.strptime(reminder_datetime, datetime_format)
+
+        # Dummy implementation - just print the reminder
+        print(f"\n{'='*60}")
+        print(f"🔔 REMINDER SET")
+        print(f"{'='*60}")
+        print(f"Time: {dt.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"Message: {message}")
+        print(f"{'='*60}\n")
+
+        return f"Reminder set successfully for {dt.strftime('%Y-%m-%d %H:%M:%S')}: {message}"
+    except ValueError as e:
+        return f"Error setting reminder: {str(e)}"
 
 
 get_current_datetime_schema = {
@@ -81,10 +147,96 @@ calculate_time_difference_schema = {
     }
 }
 
+add_duration_schema = {
+    "name": "add_duration",
+    "description": "Adds a duration (years, months, weeks, days, hours, minutes, seconds) to a datetime. If no base datetime is provided, uses the current time.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "base_datetime": {
+                "type": "string",
+                "description": "The starting datetime as a string. If not provided or empty, uses current time."
+            },
+            "years": {
+                "type": "integer",
+                "description": "Number of years to add",
+                "default": 0
+            },
+            "months": {
+                "type": "integer",
+                "description": "Number of months to add",
+                "default": 0
+            },
+            "weeks": {
+                "type": "integer",
+                "description": "Number of weeks to add",
+                "default": 0
+            },
+            "days": {
+                "type": "integer",
+                "description": "Number of days to add",
+                "default": 0
+            },
+            "hours": {
+                "type": "integer",
+                "description": "Number of hours to add",
+                "default": 0
+            },
+            "minutes": {
+                "type": "integer",
+                "description": "Number of minutes to add",
+                "default": 0
+            },
+            "seconds": {
+                "type": "integer",
+                "description": "Number of seconds to add",
+                "default": 0
+            },
+            "input_format": {
+                "type": "string",
+                "description": "Format of the input datetime string. Uses Python's strftime format codes.",
+                "default": "%Y-%m-%d %H:%M:%S"
+            },
+            "output_format": {
+                "type": "string",
+                "description": "Format of the output datetime string. Uses Python's strftime format codes.",
+                "default": "%Y-%m-%d %H:%M:%S"
+            }
+        },
+        "required": []
+    }
+}
+
+set_reminder_schema = {
+    "name": "set_reminder",
+    "description": "Sets a reminder for a specific date and time with a custom message",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "reminder_datetime": {
+                "type": "string",
+                "description": "The date and time when the reminder should trigger, as a string"
+            },
+            "message": {
+                "type": "string",
+                "description": "The reminder message to display"
+            },
+            "datetime_format": {
+                "type": "string",
+                "description": "Format of the datetime string. Uses Python's strftime format codes.",
+                "default": "%Y-%m-%d %H:%M:%S"
+            }
+        },
+        "required": ["reminder_datetime", "message"]
+    }
+}
+
 # Tool registry mapping tool names to functions
 TOOL_REGISTRY = {
     "get_current_datetime": get_current_datetime,
-    "calculate_time_difference": calculate_time_difference
+    "calculate_time_difference": calculate_time_difference,
+    "add_duration": add_duration,
+    "set_reminder": set_reminder
 }
 
 
@@ -176,10 +328,10 @@ client = AnthropicBedrockMantle()
 
 messages = [{
     "role": "user", 
-    "content": "What is the current time in 12-hour format? Also, if I started work at 09:00:00 and it's now the current time, how many seconds have I been working?"
+    "content": "Set a reminder for me to check my email in 20 days from now. Reminder should show me the exact date and time and the weekday."
 }]
 
-tools = [get_current_datetime_schema, calculate_time_difference_schema]
+tools = [get_current_datetime_schema, calculate_time_difference_schema, add_duration_schema, set_reminder_schema]
 
 final_answer = run_exchange(client, messages, tools)
 
