@@ -112,7 +112,11 @@ async def main():
         command="uv",
         args=["run", "mcp_server.py"],
     ) as _client:
-        pass
+        #pass
+        result = await _client.list_tools()
+        print(result)
+        result = await _client.call_tool("read_doc_contents", {"doc_id": "plan.md"})
+        print(result)
 
 
 if __name__ == "__main__":
