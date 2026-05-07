@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "local-docs": {
+      "command": "uv",
+      "args": ["run", "main.py"]
+    }
+  }
+}
