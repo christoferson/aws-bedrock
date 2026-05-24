@@ -17,6 +17,7 @@ def add_assistant_message(messages, text):
 
 def chat(messages):
     response = client.converse(modelId=model_id, messages=messages)
+    print(response)
     return response["output"]["message"]["content"][0]["text"]
 
 # Make a starting list of messages
